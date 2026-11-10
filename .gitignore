@@ -1,0 +1,7 @@
+wasi-sdk-*/
+cpython/
+deps/
+stage/
+dist/
+*.log
+*.tar.gz

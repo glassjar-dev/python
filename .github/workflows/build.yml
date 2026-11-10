@@ -1,0 +1,27 @@
+name: Build CPython for WASI
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.14'
+      - name: Install build tools
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y pkgconf rsync
+          curl -sSf https://wasmtime.dev/install.sh | bash -s -- --version v50.0.1
+          echo "$HOME/.wasmtime/bin" >> "$GITHUB_PATH"
+      - name: Build
+        run: ./build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: python-wasi
+          path: dist/

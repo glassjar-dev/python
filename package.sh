@@ -24,7 +24,7 @@ rsync -a --exclude '__pycache__' \
 # Build-time configuration, with this checkout's path replaced so builds on different
 # machines produce the same bytes.
 for f in "${BUILD}"/build/lib.wasi-wasm32-"${MINOR}"/_sysconfigdata_*.py "${BUILD}"/build/lib.wasi-wasm32-"${MINOR}"/_sysconfig_vars_*.json; do
-  sed "s#$(pwd)#/build#g" "$f" > "${LIB}/$(basename "$f")"
+  sed -e "s#$(pwd)#/build#g" -e "s#${WASI_SDK_DIR}#wasi-sdk#g" "$f" > "${LIB}/$(basename "$f")"
 done
 
 # Compile with the interpreter itself, at the paths it runs from, so tracebacks and the

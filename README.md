@@ -23,7 +23,10 @@ ones work), `ctypes`, `readline`, `multiprocessing`, `curses`, `tkinter`.
 hash-based `.pyc`, stored uncompressed so imports never inflate) and the `os.py` /
 `lib-dynload` landmarks `getpath` uses to find the prefix. The prefix is `/usr/local`, like
 the 3.11 runtime it replaces, so the debugger can tell the student's files from library code.
-Both files are reproducible from the pinned inputs in `versions.env`.
+Both are rebuilt from the pinned inputs in `versions.env`. `python.wasm` is byte-identical
+across build machines (macOS and Linux give the same bytes); the stdlib archive is too,
+except `_sysconfigdata`/`_sysconfig_vars`, which record the build machine (its triple,
+wasmtime path). The files glassjar ships are CI's artifacts.
 
 ## Build
 

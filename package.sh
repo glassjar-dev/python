@@ -21,19 +21,22 @@ rsync -a --exclude '__pycache__' \
   --exclude '/turtle.py' --exclude '/ensurepip/' --exclude '/venv/' --exclude '/curses/' \
   --exclude '/multiprocessing/' --exclude '/profiling/' \
   cpython/Lib/ "${LIB}/"
-cp "${BUILD}"/build/lib.wasi-wasm32-"${MINOR}"/_sysconfigdata_*.py "${LIB}/"
-cp "${BUILD}"/build/lib.wasi-wasm32-"${MINOR}"/_sysconfig_vars_*.json "${LIB}/" 2>/dev/null || true
+# Build-time configuration, with this checkout's path replaced so builds on different
+# machines produce the same bytes.
+for f in "${BUILD}"/build/lib.wasi-wasm32-"${MINOR}"/_sysconfigdata_*.py "${BUILD}"/build/lib.wasi-wasm32-"${MINOR}"/_sysconfig_vars_*.json; do
+  sed "s#$(pwd)#/build#g" "$f" > "${LIB}/$(basename "$f")"
+done
 
 # Compile with the interpreter itself, at the paths it runs from, so tracebacks and the
 # debugger see /usr/local/lib/python3.15/... for library code.
-wasmtime run --dir "${STAGE}::/" "${BUILD}/python.wasm" -m compileall -b -q --invalidation-mode unchecked-hash "/usr/local/lib/python${MINOR}" || true
+wasmtime run --env PYTHONDONTWRITEBYTECODE=1 --dir "${STAGE}::/" "${BUILD}/python.wasm" -m compileall -b -q --invalidation-mode unchecked-hash "/usr/local/lib/python${MINOR}" || true
 python3 - "${LIB}" "${STAGE}/usr/local/lib/python${TAG}.zip" <<'EOF'
 import os, sys, zipfile
 src, out = sys.argv[1], sys.argv[2]
 count = 0
 with zipfile.ZipFile(out, 'w', zipfile.ZIP_STORED) as z:
     for dirpath, dirs, files in os.walk(src):
-        dirs.sort()
+        dirs[:] = sorted(d for d in dirs if d != '__pycache__')
         for name in sorted(files):
             if name.endswith('.pyc') or (name.endswith('.json') and name.startswith('_sysconfig')):
                 path = os.path.join(dirpath, name)
